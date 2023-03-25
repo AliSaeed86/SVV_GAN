@@ -166,12 +166,7 @@ def g_vae(in_ch, out_ch, nf, latent_dim, is_binary=False, name='vae'):
     - latent_dim: the number of latent factors to use.
     - is_binary: whether the output is binary or not.
     # """
-    # in_ch=1
-    # out_ch=1
-    # nf = 32
-    # latent_dim=64
-    # is_binary=True
-    # name='vae'
+
 
     i = Input(shape=(in_ch, 256, 256))
 
@@ -343,17 +338,10 @@ def g_vae(in_ch, out_ch, nf, latent_dim, is_binary=False, name='vae'):
         a_flat = K.batch_flatten(a)
         ap_flat = K.batch_flatten(ap)
 
-        # reconstruction loss commented by ali
+
         L_atoa = objectives.binary_crossentropy(a_flat, ap_flat)
 
-        # ADDED by ALI
-        # KL divergence
-        # kl_loss = -5e-4 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-        # print(" 100 * K.mean(L_atoa + kl_loss) ")
-        # print( 100 * K.mean(L_atoa + kl_loss) )
-        # print(" 100 * K.mean(L_atoa + kl_loss) ")
 
-        # return 100 * K.mean(L_atoa + kl_loss)
 
         return 100 * L_atoa          # ORIGINAL
 
@@ -414,14 +402,6 @@ def code_discriminator(latent_dim, nf, opt=Adam(), name='code_d'):
     h1 = Dense(nf)(z)
     x = LeakyReLU(0.2)(h1)
 
-# ## added by Ali #################
-    # h11 = Dense(nf*2)(x)
-    # x = LeakyReLU(0.2)(h11)
-# #################################
-# ## added by Ali  ################
-    # h111 = Dense(nf*4)(x)
-    # x = LeakyReLU(0.2)(h111)
-# ##################################
     h2 = Dense(1)(x)
     out = Activation('sigmoid')(h2)
 
@@ -553,37 +533,12 @@ def pix2pix2pix(vae, vae_OD, atob, d, code_d, code_d_OD, a_ch, b_ch, alpha=100, 
     ap_OD = decoder_OD(z_OD)
 
     BV_OD = merge([ap, ap_OD], mode='concat', concat_axis=1)
-    # print(BV_OD.shape)   # (?, 2, 256, 256)
-
-
-
-    # MY CUSTOM LAYER for sharpeneing VAE output       Added by Ali
-    # x = Conv2D(1, 9, 9, init=my_init4,border_mode='same', subsample=(1, 1))(ap)
-    # x = Conv2D(1, 9, 9, init=my_init4,border_mode='same', subsample=(1, 1),activation='relu')(x)
-    # x = BatchNorm()(x)
-    # x = Activation('sigmoid')(x)
-    # x = Lambda(lambda z: Binariziation_vessels(x))(x)
-    ##################
-    # x_OD = merge([x, ap_OD], mode='concat', concat_axis=1)
-    # bp = atob(x_OD)
-    
-
+    # print(BV_OD.shape)   # (?, 2, 256, 256)  
 
 
     # A' -> B'
     bp = atob(BV_OD)                                      # print(bp.shape)      # (?, 3, 256, 256)
-
-
-    # Discriminator receives the two generated images
-    # ap_ap_OD = merge([ap, ap_OD], mode='concat', concat_axis=1)
-    # bp_ap_OD = merge([bp, ap_OD], mode='concat', concat_axis=1)
-
-    # # d_in = merge([ap, bp], mode='concat', concat_axis=1)
     d_in = merge([BV_OD, bp], mode='concat', concat_axis=1)
-    # d_in = merge([ap_ap_OD, bp_ap_OD], mode='concat', concat_axis=1)
-    # # print(d_in.shape)      # (?, 5, 256, 256)
-
-    # gan = Model([a, b], d(d_in), name=name)
     gan = Model([a, b, OD], d(d_in), name=name)
 
     def gan_loss(y_true, y_pred):
@@ -624,16 +579,10 @@ def pix2pix2pix(vae, vae_OD, atob, d, code_d, code_d_OD, a_ch, b_ch, alpha=100, 
             1).astype('float32').reshape((-1, 1)), code_d(z))
         L_code_OD = objectives.binary_crossentropy(np.asarray(
             1).astype('float32').reshape((-1, 1)), code_d_OD(z_OD))
-
         # return L_adv + beta*L_atoa + alpha*L_atob + L_code
         return L_adv + 100*L_atoa + 20*L_atoa_OD + alpha*L_atob + L_code + L_code_OD
-
-    # This network is used to train the generator. Freeze the discriminator
-    # part
     gan.get_layer('d').trainable = False
-
     gan.compile(optimizer=opt, loss=gan_loss)
-
     return gan
 
 
@@ -641,147 +590,17 @@ def conditional_generator(atoa, atoa_OD, atob, a_ch):
     """Merge the two models into one generator model that goes from a to b."""
     i = Input(shape=(a_ch, 256, 256))
     i_OD = Input(shape=(a_ch, 256, 256))
-
     BV = atoa(i)
     OD = atoa_OD(i_OD)
-
     BV_OD = merge([BV, OD], mode='concat', concat_axis=1)
-
     bp = atob(BV_OD)
-
-    # BV_OD = merge([bp,OD], mode='concat', concat_axis=1)
-
     g = Model([i, i_OD], bp)
-
-    # g = Model([i,i_OD], atob(BV_OD))
-    # # g = Model(i, atob(atoa(i)))
-
     return g
 
 
-# # def sharping(image, **kwargs):
-# #     kernel = np.array([[-2, -2, -2],
-# #                             [-2, 17, -2],
-# #                             [-2, -2, -2]])
-# #     kernel = tf.expand_dims(kernel, 0)
-# #     kernel = tf.expand_dims(kernel, 0)
-# #     kernel = tf.cast(kernel, tf.float32)
-# #     return tf.nn.conv2d(image, kernel, strides=[1, 1, 1, 1], padding='SAME')
-# #     return Convolution2D(image, kernel, subsample=(1,1,1,1),nb_col=2, border_mode='same')
-
-#  # return Model.add(Conv2D(32, 3, 3, input_shape=(3, 150, 150)))
-# # padding == border_mode
-# # subsample == strides
-
-# # from keras import backend as K
-# # from keras.engine.topology import Layer
-# # import numpy as np
-
-# # from keras import backend as K
-# # from keras.engine.topology import Layer
-
-# # ########################### ADDED by ALI
-# # class Sharpen(Layer):
-# #     def __init__(self, num_outputs, **kwargs):
-# #         self.num_outputs = num_outputs
-# #         super(Sharpen, self).__init__(**kwargs)
-
-# #     def build(self, input_shape):
-# #         self.kernel = np.array([[-2, -2, -2],
-# #                                 [-2, 17, -2],
-# #                                 [-2, -2, -2]])
-
-# #         self.kernel = tf.expand_dims(self.kernel, 0)
-# #         self.kernel = tf.expand_dims(self.kernel, 0)
-# #         self.kernel = tf.cast(self.kernel, tf.float32)
-# #         print('input_shape')
-# #         print(input_shape)
-# #         print(' self.kernel ')
-# #         print( self.kernel )
-# #         super(Sharpen, self).build(input_shape)
-
-# #     def call(self, input_shape,mask=None):
-# #         #return Conv2D((input_shape),3,3)# strides=(1, 1), dim_ordering='th', padding='SAME')
-# #         # return Convolution2D((input_shape), 3, 3)
-# #         return tf.nn.conv2d(input_, self.kernel, strides=[1, 1, 1, 1], padding='SAME')
-
-# #         #Convolution2D(input_shape, self.kernel, subsample=(1,1,1,1), border_mode='same')
-# #     def  get_output_shape_for(self, input_shape):
-# #         return(input_shape[0],self.num_outputs)
-
-
-# # class MyLayer(Layer):
-# #     def __init__(self, num_outputs, **kwargs):
-# #         self.num_outputs = num_outputs
-# #         super(MyLayer, self).__init__(**kwargs)
-
-# #     # custom filter
-# #     # def my_filter(self):
-
-# #     #     f = np.array([
-# #     #             [[[-2]], [[-2]], [[-2]]],
-# #     #             [[[-2]], [[17]], [[-2]]],
-# #     #             [[[-2]], [[-2]], [[-2]]]
-# #     #         ])
-# #     #     assert f.shape == shape
-# #     #     return K.variable(f, dtype='float32')
-
-# #     def build(self, input_shape):
-# #         ## Create a trainable weight variable for this layer.
-# #         self.kernel = self.add_weight(shape=(input_shape[1], self.num_outputs),
-# #                                   initializer= np.array([[[[-2]], [[-2]], [[-2]]],
-# #                                                          [[[-2]], [[17]], [[-2]]],
-# #                                                          [[[-2]], [[-2]], [[-2]]]])
-# #                                   # print(self.kernel.shape)
-# #         # self.kernel = np.array([[-2, -2, -2],
-# #         #                         [-2, 17, -2],
-# #         #                         [-2, -2, -2]])
-# #         # self.kernel = tf.expand_dims(self.kernel, 0)
-# #         # self.kernel = tf.expand_dims(self.kernel, 0)
-# #         # self.kernel = tf.cast(self.kernel, tf.float32)
-
-# #         super(MyLayer, self).build(input_shape)  # Be sure to call this somewhere!
-
-# #     def call(self, input_shape, mask=None):
-# #         # return K.dot(x, self.W)
-# #         return tf.nn.conv2d(input_shape, self.kernel, strides=[1, 1, 1, 1], padding='SAME')
-
-# #     def get_output_shape_for(self, input_shape):
-# #         return (input_shape[0], self.num_outputs)
-
-# ################################
-'''##############################################'''
-'''  HERE IS THE CORRECT SHARPENING LAYER   '''
-'''##############################################'''
-# # def my_init(shape, name="SHAPE", **kwargs):
-# #     print(shape)
-# #     # value = np.random.random(shape)
-# #     a = np.array([-2, -2, -2, -2, 17, -2, -2, -2, -2])
-# #     # a = np.array([0 , -1,  0, -1,  5, -1,  0, -1,  0])
-# #     # a = np.array([-1 , -1 , -1, -1,  0, -1, -1, -1, -1])
-# #     value = a.reshape(3, 3)
-# #     value= np.expand_dims(value, axis=0)
-# #     value= np.expand_dims(value, axis=0)
-# #     print(value.shape)
-# #     return K.variable(value, name=name)
-
-# # def my_init2(shape, name="SHAPE", **kwargs):
-# #     print(shape)
-# #     # value = np.random.random(shape)
-# #     # a = np.array([-2, -2, -2, -2, 30, -2, -2, -2, -2])
-# #     # a = np.array([0 , -1,  0, -1,  4, -1,  0, -1,  0])
-# #     a = np.array([-1 , -1 , -1, -1,  0, -1, -1, -1, -1])
-# #     value = a.reshape(3, 3)
-# #     value= np.expand_dims(value, axis=0)
-# #     value= np.expand_dims(value, axis=0)
-# #     print(value.shape)
-# #     return K.variable(value, name=name)
 
 def my_init3(shape, name="SHAPE", **kwargs):
     print(shape)
-    # value = np.random.random(shape)
-    # a = np.array([-2, -2, -2, -2, 30, -2, -2, -2, -2])
-    # a = np.array([0 , -1,  0, -1,  4, -1,  0, -1,  0])
     a = np.array([-1, -1, -1, -1, 8, -1,-1, -1, 0])
     value = a.reshape(3, 3)
     value = 1/3 * value
@@ -792,19 +611,6 @@ def my_init3(shape, name="SHAPE", **kwargs):
 
 
 def my_init4(shape, name="SHAPE", **kwargs):
-    # print(shape)
-    # value = np.random.random(shape)
-    # a = np.array([-2, -2, -2, -2, 30, -2, -2, -2, -2])
-    # a = np.array([0 , -1,  0, -1,  4, -1,  0, -1,  0])
-    # value = np.array([[-1,-1,-1,-1,-1,-1,-1,-1,-1],
-    #                   [-1,-1,-1,-1,-1,-1,-1,-1,-1],
-    #                   [-1,-1,-1,-1,-1,-1,-1,-1,-1],
-    #                   [-1,-1,-1,9,9,9,9,-1,-1],
-    #                   [-1,-1,-1,9,9,9,9,-1,-1],
-    #                   [-1,-1,-1,9,9,9,9,-1,-1],
-    #                   [-1,-1,-1,-1,-1,-1,-1,-1,-1],
-    #                   [-1,-1,-1,-1,-1,-1,-1,-1,-1],
-    #                   [-1,-1,-1,-1,-1,-1,-1,-1,-1]])
     value = np.array([[0, 0, 3, 2, 2, 2, 3, 0, 0],
                       [0, 2, 3, 5, 5, 5, 2, 2, 0],
                       [3, 3, 5, 3, 0, 3, 5, 3, 3],
@@ -818,136 +624,17 @@ def my_init4(shape, name="SHAPE", **kwargs):
     value = np.expand_dims(value, axis=0)
     print(value.shape)
     return K.variable(value, name=name)
-
-# # def sobel(shape, name="SHAPE", **kwargs):
-# #     print(shape)
-
-# #     value = np.array([[-5 ,-4  ,0 ,4  ,5 ],
-# #                       [-8 ,-10 ,0 ,10 ,8 ],
-# #                       [-10,-20 ,0 ,20 ,10],
-# #                       [-8 ,-10 ,0 ,10 ,8],
-# #                       [-5 ,-4  ,0 ,4  ,5]])
-
-# #     value= np.expand_dims(value, axis=0)
-# #     value= np.expand_dims(value, axis=0)
-# #     print(value.shape)
-# #     return K.variable(value, name=name)
-# # def sobel2(shape, name="SHAPE", **kwargs):
-# #     print(shape)
-
-# #     value = np.array([[ 5 , 8  ,10 ,8   ,5 ],
-# #                       [ 4 , 10 ,20 ,10  ,4 ],
-# #                       [ 0 ,0   ,0  ,0   ,0 ],
-# #                       [-4 ,-10 ,-20,-10 ,-4],
-# #                       [-5 ,-8  ,-10 ,-8  ,-5]])
-
-# #     value= np.expand_dims(value, axis=0)
-# #     value= np.expand_dims(value, axis=0)
-# #     print(value.shape)
-# #     return K.variable(value, name=name)
-
-# # def canny3(shape, name="SHAPE", **kwargs):
-# #     value = np.array([[ 2 , 4 ,5 ,4 ,2 ],
-# #                       [ 4 , 9 ,12,9 ,4 ],
-# #                       [ 5 , 12,15,12,5 ],
-# #                       [ 4 , 9 ,12,9 ,4],
-# #                       [ 2 ,4  ,5 ,4 ,2]])
-# #     value = 1/159 * value
-# #     value= np.expand_dims(value, axis=0)
-# #     value= np.expand_dims(value, axis=0)
-# #     return K.variable(value, name=name)
-
-# import cv2
-# img = cv2.imread('771.tif',0)
-# img.shape
-# plt.imshow(img)
-# image = np.expand_dims(np.expand_dims(np.array(img),0),0)
-# image.shape
-
-
 def add1(x, x2):
     return tf.math.add(x, x2)
-
-
-def mult1(x, x2):
-    return tf.math.multiply(x, x2)
-
-
-# # img22 = models.atob.predict(b_gen2)
-# # img23=img22[0,0,:,:]
-# # img23.shape
-# # plt.imshow(img23)
-# # plt.show()
-
-#  i = Input(shape=(32,))
-#  i_OD = i
-
-#  decoder = vae.get_layer('vae_decoder')
-#  ap = decoder(i)
-
-#  ap = Conv2D(1,9,9,init=my_init4, border_mode='same',subsample=(1, 1))(ap)
-#  ap = BatchNorm()(ap)
-#  ap = Activation('sigmoid')(ap)
-#  ap = Lambda(lambda z: Binariziation_vessels(ap))(ap)
-
-#  decoder_OD = vae_OD.get_layer('vae_OD_decoder')
-#  ap_OD = decoder_OD(i_OD)
-
-#  ap_apOD = Lambda(lambda z: add1(ap,ap_OD))(ap_OD)
-#  ap_apOD = merge([ap_OD, ap], mode='concat', concat_axis=1)
-
-#   bp = models.atob(ap_apOD) #atob(ap)
-
-#  # ap_apOD = merge([ap, ap_apOD], mode='concat', concat_axis=1)   # we added this to get the output channels for ap_apOD equal to 3 not equal to 2, to avoid the problem we face later in the  PLOT THE A->A'->B' RESULTS when we call compose_imgs and convert_to_rgb function which needs image with either one channel or three channels
-
-#    g = Model([i], [ap_apOD, bp])
-#  g = Model(i, ap_apOD)
-
 
 def Binariziation_vessels(x):
     x1 = x < 0.2
     x1 = tf.cast(x1, tf.float32)
     return x1
 
-
-# i = Input(shape=(32,))
-# i_OD = i
-# decoder = vae.get_layer('vae_decoder')
-# ap = decoder(i)
-# x = Conv2D(1, 9, 9, init=my_init4, border_mode='same', subsample=(1, 1))(ap)
-# x = BatchNorm()(x)
-# x = Activation('sigmoid')(x)
-# x = Lambda(lambda z: Binariziation_vessels(x))(x)
-
-# decoder_OD = vae_OD.get_layer('vae_OD_decoder')
-# ap_OD = decoder_OD(i_OD)
-
-# ## ap_apOD = Lambda(lambda z: add1(ap,ap_OD))(ap_OD)
-# x_OD = merge([x, ap_OD], mode='concat', concat_axis=1)
-
-# bp = models.atob(x_OD)  # atob(ap)
-
-# ## we added this to get the output channels for ap_apOD equal to 3 not equal to 2, to avoid the problem we face later in the  PLOT THE A->A'->B' RESULTS when we call compose_imgs and convert_to_rgb function which needs image with either one channel or three channels
-# BV_OD = merge([ap, ap_OD], mode='concat', concat_axis=1)
-
-# g = Model([i], [BV_OD, bp])
-# ## g = Model(i, x)
-# ################ prediction 
-# z_sample = np.random.normal(loc=0.0, scale=1.0, size=(1, 32))   # this executed only once
-
-# vessels,img = g.predict(z_sample, batch_size=1)
-# vessels.shape
-# img2 = img[0, 0, :, :]
-# img2.shape
-# plt.imshow(img2)
-
-'''##############################################'''
-'''##############################################'''
-
 def generator(vae, vae_OD, atob, latent_dim):
     """Create a model that generates a pair of images."""
-    i = Input(shape=(latent_dim,))
-   # i_OD = Input(shape=(latent_dim,))           # اذا عمل سامبلنك مختلف الغي احد الادخالات واعتمد على واحد فقط
+    i = Input(shape=(latent_dim,))   
     i_OD = i
     decoder = vae.get_layer('vae_decoder')
     ap = decoder(i)
@@ -956,7 +643,6 @@ def generator(vae, vae_OD, atob, latent_dim):
     x = BatchNorm()(x)
     x = Activation('sigmoid')(x)
     x = Lambda(lambda z: Binariziation_vessels(x))(x)
-    ##################
     decoder_OD = vae_OD.get_layer('vae_OD_decoder')
     ap_OD = decoder_OD(i_OD)
 
@@ -964,18 +650,7 @@ def generator(vae, vae_OD, atob, latent_dim):
     x_OD = merge([x, ap_OD], mode='concat', concat_axis=1)
 
     bp = atob(x_OD)  # atob(ap)
-
-    # bp_OD = merge([bp, ap_OD], mode='concat', concat_axis=1)
-    # ap_apOD = merge([ap, ap_OD,ap ], mode='concat', concat_axis=1)   # we added this to get the output channels for ap_apOD equal to 3 not equal to 2, to avoid the problem we face later in the  PLOT THE A->A'->B' RESULTS when we call compose_imgs and convert_to_rgb function which needs image with either one channel or three channels
-
     g = Model([i], [BV_OD, bp])
-
-    # # ap_apOD = Lambda(lambda z: add1(ap,ap_OD))(ap_OD)
-    # x_OD = merge([x, ap_OD], mode='concat', concat_axis=1)
-    # bp = atob(x_OD) #atob(ap)
-    # ap_apOD = merge([ap, ap, ap_OD], mode='concat', concat_axis=1)   # we added this to get the output channels for ap_apOD equal to 3 not equal to 2, to avoid the problem we face later in the  PLOT THE A->A'->B' RESULTS when we call compose_imgs and convert_to_rgb function which needs image with either one channel or three channels
-    # g = Model([i], [ap_apOD, bp])
-    # #g = Model(i, [ap, bp])
     return g
 
 
@@ -987,8 +662,4 @@ def generator_from_conditional_generator(g, latent_dim):
     vae_OD = g.layers[3]
     atob = g.layers[5]
 
-    # Original
-    # vae = g.layers[1]
-    # atob = g.layers[2]
-    # return generator(vae, atob, latent_dim)
     return generator(vae, vae_OD, atob, latent_dim)
