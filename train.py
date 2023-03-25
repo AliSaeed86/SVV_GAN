@@ -402,20 +402,20 @@ def train_iteration(models, generators, losses, params,flag):
     # Get necessary generators
     d_gen = generators.d_gen
     p2p2p_gen = generators.p2p2p_gen
-    p2p_gen = generators.p2p_gen                #   ''' ##### Added by Ali #####'''
+    p2p_gen = generators.p2p_gen                
     code_d_gen = generators.code_d_gen
-    vae_gen = generators.vae_gen                #   ''' ##### Added by Ali #####'''
-    code_d_gen_OD = generators.code_d_gen_OD    #   ''' ##### Added by Ali #####'''
+    vae_gen = generators.vae_gen                
+    code_d_gen_OD = generators.code_d_gen_OD  
     vae_gen_OD = generators.vae_gen_OD      
 
     # Get necessary models
     d = models.d
     code_d = models.code_d
-    vae = models.atoa                #   ''' ##### Added by Ali #####'''
+    vae = models.atoa           
     p2p2p = models.p2p2p
-    p2p = models.p2p                 #        ''' ##### Added by Ali #####'''
-    code_d_OD = models.code_d_OD     #   ''' ##### Added by Ali #####'''
-    vae_OD = models.atoa_OD             #   ''' ##### Added by Ali #####'''
+    p2p = models.p2p              
+    code_d_OD = models.code_d_OD    
+    vae_OD = models.atoa_OD           
       
     # k = 1        # number of times to train D
     # r = 1       # number of times to train G
@@ -425,52 +425,44 @@ def train_iteration(models, generators, losses, params,flag):
     if flag == 0 :
         dhist = train_discriminator(d, d_gen, batch_size=params.batch_size)
         losses['d'].extend(dhist.history['loss'])
-                          #   ''' ##### Added by Ali #####'''
+
         cdhist = train_discriminator(code_d, code_d_gen, batch_size=params.batch_size)      
         losses['code_d'].extend(cdhist.history['loss'])
-        cdhist_OD = train_discriminator(code_d_OD, code_d_gen_OD, batch_size=params.batch_size)         #   ''' ##### Added by Ali #####'''
-        losses['code_d_OD'].extend(cdhist_OD.history['loss'])               #   ''' ##### Added by Ali #####'''
+        cdhist_OD = train_discriminator(code_d_OD, code_d_gen_OD, batch_size=params.batch_size)        
+        losses['code_d_OD'].extend(cdhist_OD.history['loss'])          
         
  
     if flag == 1 :
-        p2phist = train_generator(p2p, p2p_gen, batch_size=params.batch_size)    #   ''' ##### Added by Ali #####'''
-        losses['p2p'].extend(p2phist.history['loss'])                            #   ''' ##### Added by Ali #####'''
+        p2phist = train_generator(p2p, p2p_gen, batch_size=params.batch_size)  
+        losses['p2p'].extend(p2phist.history['loss'])                          
         p2p2phist = train_generator(p2p2p, p2p2p_gen, batch_size=params.batch_size)
         losses['p2p2p'].extend(p2p2phist.history['loss'])
 
-        vae_hist = train_discriminator_VAE(vae, vae_gen , batch_size=20)     #   ''' ##### Added by Ali #####'''
-        losses['vae'].extend(vae_hist.history['loss'])                       #   ''' ##### Added by Ali #####''' 
-        vae_hist_OD = train_discriminator_VAE_OD(vae_OD, vae_gen_OD , batch_size=20)     #   ''' ##### Added by Ali #####'''
-        losses['vae_OD'].extend(vae_hist_OD.history['loss'])                       #   ''' ##### Added by Ali #####''' 
+        vae_hist = train_discriminator_VAE(vae, vae_gen , batch_size=20)    
+        losses['vae'].extend(vae_hist.history['loss'])                      
+        vae_hist_OD = train_discriminator_VAE_OD(vae_OD, vae_gen_OD , batch_size=20) 
+        losses['vae_OD'].extend(vae_hist_OD.history['loss'])                       
 
 
     if flag == 2 :
-        cdhist_OD = train_discriminator(code_d_OD, code_d_gen_OD, batch_size=params.batch_size)         #   ''' ##### Added by Ali #####'''
-        losses['code_d_OD'].extend(cdhist_OD.history['loss'])               #   ''' ##### Added by Ali #####'''
+        cdhist_OD = train_discriminator(code_d_OD, code_d_gen_OD, batch_size=params.batch_size)
+        losses['code_d_OD'].extend(cdhist_OD.history['loss'])           
         
-        vae_hist_OD = train_discriminator_VAE(vae_OD, vae_gen_OD , batch_size=20)     #   ''' ##### Added by Ali #####'''
+        vae_hist_OD = train_discriminator_VAE(vae_OD, vae_gen_OD , batch_size=20) 
         losses['vae_OD'].extend(vae_hist_OD.history['loss'])   
         
-        dhist = train_discriminator(d, d_gen, batch_size=params.batch_size)          # generate batches from models.g which takes a-->bp and feed them to d
+        dhist = train_discriminator(d, d_gen, batch_size=params.batch_size)         
         losses['d'].extend(dhist.history['loss'])
-        p2phist = train_generator(p2p, p2p_gen, batch_size=params.batch_size)    #   ''' ##### Added by Ali #####'''
+        p2phist = train_generator(p2p, p2p_gen, batch_size=params.batch_size)    
         losses['p2p'].extend(p2phist.history['loss'])  
-                          #   ''' ##### Added by Ali #####'''
+                          
         cdhist = train_discriminator(code_d, code_d_gen, batch_size=params.batch_size)      
         losses['code_d'].extend(cdhist.history['loss'])
         p2p2phist = train_generator(p2p2p, p2p2p_gen, batch_size=params.batch_size)
         losses['p2p2p'].extend(p2p2phist.history['loss'])
         
-        vae_hist = train_discriminator_VAE(vae, vae_gen , batch_size=20)     #   ''' ##### Added by Ali #####'''
-        losses['vae'].extend(vae_hist.history['loss'])                       #   ''' ##### Added by Ali #####'''
-
-                    #   ''' ##### Added by Ali #####'''
-
-
-    # Train the code discriminator, atoa and atob models
-        # print("p2p2phist.... " + str(i))
-        # print(p2p2phist.history['loss'])
-    # print("-------------------------" )
+        vae_hist = train_discriminator_VAE(vae, vae_gen , batch_size=20)   
+        losses['vae'].extend(vae_hist.history['loss'])                     
 
 
 
@@ -739,17 +731,6 @@ if __name__ == '__main__':
     train(models, it_train, it_val, params)
 
 
-
-# a, b,OD = next(it_train)
-# aa= a[0,0,:,:]
-# cc= b[0,0,:,:]
-# bb= OD[0,0,:,:]
-# plt.subplot(1,3,1)
-# plt.imshow(aa)
-# plt.subplot(1,3,2)
-# plt.imshow(cc)
-# plt.subplot(1,3,3)
-# plt.imshow(bb)
 
 
 
