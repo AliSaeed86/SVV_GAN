@@ -9,8 +9,16 @@ The dataset used in this work is the Messidor-DB1 dataset, which is publicly ava
 The DRIVE dataset is also use to test the efficiency of the generated images through utilizing downstream segmentation task and test the trained model on DRIVE testset. The DRIVE dataset can be accessed online as published by this work https://doi.org/10.1109/TMI.2004.825627
 
 # Prerequest 
-Python 3.8.10 
-Keras library and TensorFlow 2.6.0. 
+tensorflow-gpu==1.15.0
+keras==1.2.2
+numpy==1.21.5
+matplotlib==3.5.1
+opencv-python
+pandas== 1.3.5
+scikit-image
+seaborn==0.11.2
+tqdm==4.63.1
+protobuf==3.20.*
 
 #Train the model
 To train the model run:
