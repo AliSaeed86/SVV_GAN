@@ -250,13 +250,4 @@ if __name__ == '__main__':
     save_all_conditional(vae,vae_OD, unet, it_train, it_val, it_test, params)  ## save results from (a-->ap--> bp)  through  a, _ = next(it) -->  ap = vae.predict(a)--> bp = unet.predict(ap)
     save_generated_images(sampler, params.N, params)    # save predictions of sampler which starts from Input(shape=(latent_dim,)) -->decoder = vae.get_layer('vae_decoder') --> ap = decoder(i) --> bp = atob(ap)      
     
-
-'''
-results in folders are as follow :
-    A : means the masks
-    B : the resulted image from atob 
-    real : is the real fundus image
-    composed : combines the masks in (A) with real images in (real) with image generated from atob which are placed in (B)
-    b_cond : the resulted image from the latent space (z) to be an image through the entire model
-'''
     
