@@ -15,5 +15,6 @@ Keras library and TensorFlow 2.6.0.
 #Train the model
 To train the model run:
 
-'''python train.py [--help]
+    'python train.py [--help]'
+    
 By default the model will be saved to a folder named 'log'.
