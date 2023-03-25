@@ -421,14 +421,6 @@ def code_discriminator_OD(latent_dim, nf, opt=Adam(), name='code_d'):
     h1 = Dense(nf)(z)
     x = LeakyReLU(0.2)(h1)
 
-# ## added by Ali #################
-    # h11 = Dense(nf*2)(x)
-    # x = LeakyReLU(0.2)(h11)
-# #################################
-# ## added by Ali  ################
-#     h111 = Dense(nf*4)(x)
-#     x = LeakyReLU(0.2)(h111)
-# ##################################
     h2 = Dense(1)(x)
     out = Activation('sigmoid')(h2)
 
@@ -451,12 +443,8 @@ def pix2pix(atob, d, a_ch, b_ch, alpha=100, is_a_binary=False,
     bp = atob(BV_OD)
     # bp = atob(a)
 
-    # Discriminator receives the pair of images
-    # bp_OD = merge([bp, OD], mode='concat', concat_axis=1)
-    d_in = merge([BV_OD, bp], mode='concat', concat_axis=1)
-    # # d_in = merge([a, bp], mode='concat', concat_axis=1)
-    # d_in = merge([BV_OD, bp], mode='concat', concat_axis=1)
-
+    # Discriminator receives thepair of images
+    d_in = merge([BV_OD, bp], mode='concat', concat_axis=1
     pix2pix = Model([a, b, OD], d(d_in), name=name)
 
     def pix2pix_loss(y_true, y_pred):
@@ -521,24 +509,6 @@ def pix2pix2pix(vae, vae_OD, atob, d, code_d, code_d_OD, a_ch, b_ch, alpha=100, 
     b = Input(shape=(b_ch, 256, 256))
     OD = Input(shape=(a_ch, 256, 256))
 
-    # A -> A'
-    encoder = vae.get_layer('vae_encoder')
-    decoder = vae.get_layer('vae_decoder')
-    z = encoder(a)
-    ap = decoder(z)
-
-    encoder_OD = vae_OD.get_layer('vae_OD_encoder')
-    decoder_OD = vae_OD.get_layer('vae_OD_decoder')
-    z_OD = encoder_OD(OD)
-    ap_OD = decoder_OD(z_OD)
-
-    BV_OD = merge([ap, ap_OD], mode='concat', concat_axis=1)
-    # print(BV_OD.shape)   # (?, 2, 256, 256)  
-
-
-    # A' -> B'
-    bp = atob(BV_OD)                                      # print(bp.shape)      # (?, 3, 256, 256)
-    d_in = merge([BV_OD, bp], mode='concat', concat_axis=1)
     gan = Model([a, b, OD], d(d_in), name=name)
 
     def gan_loss(y_true, y_pred):
@@ -589,10 +559,6 @@ def pix2pix2pix(vae, vae_OD, atob, d, code_d, code_d_OD, a_ch, b_ch, alpha=100, 
 def conditional_generator(atoa, atoa_OD, atob, a_ch):
     """Merge the two models into one generator model that goes from a to b."""
     i = Input(shape=(a_ch, 256, 256))
-    i_OD = Input(shape=(a_ch, 256, 256))
-    BV = atoa(i)
-    OD = atoa_OD(i_OD)
-    BV_OD = merge([BV, OD], mode='concat', concat_axis=1)
     bp = atob(BV_OD)
     g = Model([i, i_OD], bp)
     return g
@@ -624,8 +590,7 @@ def my_init4(shape, name="SHAPE", **kwargs):
     value = np.expand_dims(value, axis=0)
     print(value.shape)
     return K.variable(value, name=name)
-def add1(x, x2):
-    return tf.math.add(x, x2)
+
 
 def Binariziation_vessels(x):
     x1 = x < 0.2
@@ -638,18 +603,9 @@ def generator(vae, vae_OD, atob, latent_dim):
     i_OD = i
     decoder = vae.get_layer('vae_decoder')
     ap = decoder(i)
-    # MY CUSTOM LAYER for sharpeneing VAE output       Added by Ali
-    x = Conv2D(1, 9, 9, init=my_init4,border_mode='same', subsample=(1, 1))(ap)
-    x = BatchNorm()(x)
-    x = Activation('sigmoid')(x)
-    x = Lambda(lambda z: Binariziation_vessels(x))(x)
-    decoder_OD = vae_OD.get_layer('vae_OD_decoder')
-    ap_OD = decoder_OD(i_OD)
-
-    BV_OD = merge([ap, ap_OD], mode='concat', concat_axis=1)
     x_OD = merge([x, ap_OD], mode='concat', concat_axis=1)
-
-    bp = atob(x_OD)  # atob(ap)
+    
+    bp = atob(x_OD)  
     g = Model([i], [BV_OD, bp])
     return g
 
