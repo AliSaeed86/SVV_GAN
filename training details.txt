@@ -1,3 +1,0 @@
-Results Approved :
-1. trianed with sharpening 4.5 on 900 epochs with VAE trained and 30% to 70% D2G
-2. implemeted.on.Keras1.1.2-tf1.15 with 256x256 image size...GPU
