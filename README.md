@@ -6,7 +6,7 @@ To synthesize eye fundus images directly from data, we utilize an image-to-image
 
 # Dataset
 The dataset used in this work is the Messidor-DB1 dataset, which is publicly available on the following link: https://www.adcis.net/en/third-party/messidor/ 
-The DRIVE dataset is also use to test the efficiency of the generated images through utilizing downstream segmentation task and test the trained model on DRIVE testset. The DRIVE dataset can be accessed on this link: DRIVE Dataset | Papers With Code
+The DRIVE dataset is also use to test the efficiency of the generated images through utilizing downstream segmentation task and test the trained model on DRIVE testset. The DRIVE dataset can be accessed online as published by this work https://doi.org/10.1109/TMI.2004.825627
 
 # Prerequest 
 Python 3.8.10 
