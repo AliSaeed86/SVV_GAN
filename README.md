@@ -10,15 +10,25 @@ The DRIVE dataset is also use to test the efficiency of the generated images thr
 
 # Prerequest 
 tensorflow-gpu==1.15.0
+
 keras==1.2.2
+
 numpy==1.21.5
+
 matplotlib==3.5.1
+
 opencv-python
+
 pandas== 1.3.5
+
 scikit-image
+
 seaborn==0.11.2
+
 tqdm==4.63.1
+
 protobuf==3.20.*
+
 
 #Train the model
 To train the model run:
