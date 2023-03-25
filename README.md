@@ -29,7 +29,7 @@ tqdm==4.63.1
 
 protobuf==3.20.*
 
-# Evalaluation
+# Evaluation
 We have employed commonly used evaluation methods in our study, which are based on a taxonomy that outlines the techniques used by researchers to evaluate the generated images (indicated in blue). Additionally, we have considered recommended evaluation methods proposed by other researchers to assess the synthetic images (indicated in red)
 
 ![Taxonamy](https://user-images.githubusercontent.com/68149304/227701902-f8cb08c6-2b67-4236-8394-cbf319f9215a.png)
